@@ -9,6 +9,10 @@ export default function HalamanUtama() {
     const [kotaAktif, setKotaAktif] = useState("Pekalongan");
     const [riwayat, setRiwayat] = useState<string[]>(["Pekalongan"]);
 
+    useEffect(() => {
+        console.log("Kota aktif berubah menjadi:", kotaAktif);
+    }, [kotaAktif]);
+
     function handleCari(kota: string) {
         setKotaAktif(kota);
         if (!riwayat.includes(kota)) {
