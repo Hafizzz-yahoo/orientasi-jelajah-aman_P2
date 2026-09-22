@@ -42,8 +42,6 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
-## OutPut Tampilan
-<img width="720" height="1600" alt="WhatsApp Image 2026-09-11 at 18 45 28 (1)" src="https://github.com/user-attachments/assets/f877e0c9-12fa-42c9-9801-7c2be797c39a" />
 
 ## Join the community
 
