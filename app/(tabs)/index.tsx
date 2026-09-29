@@ -25,8 +25,8 @@ export default function HalamanUtama() {
   const [sedangMemuat, setSedangMemuat] = useState(false);
   const [pesanError, setPesanError] = useState<string | null>(null);
   const teksTertunda = useDebounce(teksCari, 500);
-  
-  const requestIdRef = useRef(0); // pencegah race condition
+
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (teksTertunda.trim().length === 0) {
@@ -39,18 +39,18 @@ export default function HalamanUtama() {
   async function pilihKota(kota: HasilGeocoding) {
     setKotaTerpilih(kota);
     const idSaatIni = ++requestIdRef.current;
-    
+
     setSedangMemuat(true);
     setPesanError(null);
-    
+
     try {
       const [dataCuaca, dataAQI] = await Promise.all([
         ambilCuaca(kota.latitude, kota.longitude),
         ambilKualitasUdara(kota.latitude, kota.longitude),
       ]);
-      
-      if (idSaatIni !== requestIdRef.current) return; // hasil basi, abaikan
-      
+
+      if (idSaatIni !== requestIdRef.current) return;
+
       setCuaca(dataCuaca);
       setKualitasUdara(dataAQI);
     } catch (err) {
@@ -69,9 +69,9 @@ export default function HalamanUtama() {
           <Text>{kota.name}</Text>
         </TouchableOpacity>
       ))}
-      
+
       {sedangMemuat && <ActivityIndicator />}
-      
+
       {pesanError && (
         <View>
           <Text>{pesanError}</Text>
@@ -81,7 +81,7 @@ export default function HalamanUtama() {
           />
         </View>
       )}
-      
+
       {cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
         <WeatherCard
           kota={kotaTerpilih.name}
@@ -90,13 +90,26 @@ export default function HalamanUtama() {
           indeksAQI={kualitasUdara.indeksAQI}
         />
       )}
-      
+
       {cuaca && (
-        <Text style={{ fontSize: 12, color: "#888" }}>
-          Kondisi: {labelKodeCuaca(cuaca.saatIni.kodeCuaca)} • Angin {cuaca.saatIni.kecepatanAngin} km/j
+        <View style={{ gap: 4 }}>
+          <Text style={{ fontSize: 12, color: "#888" }}>
+            Kondisi: {labelKodeCuaca(cuaca.saatIni.kodeCuaca)} • Angin {cuaca.saatIni.kecepatanAngin} km/j
+          </Text>
+          {/* Tambahan 1: Suhu Maksimal / Minimal Hari Ini */}
+          <Text style={{ fontSize: 12, color: "#444" }}>
+            Suhu Harian: Maks {cuaca.harian.suhuMaksimal[0]}°C / Min {cuaca.harian.suhuMinimal[0]}°C
+          </Text>
+        </View>
+      )}
+
+      {/* Tambahan 2: Detail PM2.5 dan PM10 dekat AtribusiCuaca */}
+      {kualitasUdara && (
+        <Text style={{ fontSize: 11, color: "#888", textAlign: "center" }}>
+          PM2.5: {kualitasUdara.pm25} µg/m³ • PM10: {kualitasUdara.pm10} µg/m³
         </Text>
       )}
-      
+
       <AtribusiCuaca />
     </SafeAreaView>
   );
