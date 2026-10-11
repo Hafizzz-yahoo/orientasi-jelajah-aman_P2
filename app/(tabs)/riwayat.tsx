@@ -1,7 +1,7 @@
 // src/app/(tabs)/riwayat.tsx
-import { useState, useCallback } from "react";
-import { View, Text, Button } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { Alert, Button, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ambilSemuaFavorit, hapusFavorit } from "../../services/favoritStorage";
 import { KotaFavorit } from "../../types/favorit";
@@ -15,14 +15,33 @@ export default function TabRiwayat() {
     }, [])
   );
 
-  async function hapus(id: number) {
-    await hapusFavorit(id);
-    setDaftarFavorit((prev) => prev.filter((k) => k.id !== id));
+  function konfirmasiHapus(id: number, namaKota: string) {
+    Alert.alert(
+      "Konfirmasi",
+      `Yakin hapus ${namaKota}?`,
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: async () => {
+            await hapusFavorit(id);
+            setDaftarFavorit((prev) => prev.filter((k) => k.id !== id));
+          },
+        },
+      ]
+    );
   }
 
   return (
     <SafeAreaView style={{ flex: 1, padding: 16, gap: 12 }}>
       <Text style={{ fontSize: 18, fontWeight: "bold" }}>Kota Favorit</Text>
+      
+      {/* Teks jumlah favorit */}
+      <Text style={{ fontSize: 14, color: "#666" }}>
+        Tersimpan {daftarFavorit.length} kota
+      </Text>
+
       {daftarFavorit.length === 0 && <Text>Belum ada kota favorit</Text>}
       {daftarFavorit.map((kota) => (
         <View
@@ -34,7 +53,7 @@ export default function TabRiwayat() {
           }}
         >
           <Text>{kota.nama}</Text>
-          <Button title="Hapus" onPress={() => hapus(kota.id)} />
+          <Button title="Hapus" onPress={() => konfirmasiHapus(kota.id, kota.nama)} />
         </View>
       ))}
     </SafeAreaView>
