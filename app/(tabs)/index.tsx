@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { View, Text, ActivityIndicator, Button, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router"; 
 
 import SearchBox from "../../components/SearchBox";
 import WeatherCard from "../../components/WeatherCard";
@@ -15,6 +16,7 @@ import { konversiTingkatAQI } from "../../services/weatherAdapter";
 import { labelKodeCuaca } from "../../constants/weatherCodes";
 import { HasilGeocoding } from "../../types/geocoding";
 import { DataCuacaLengkap, DataKualitasUdara } from "../../types/weather";
+import { mintaIzinLokasi, ambilKoordinatSaatIni } from "../../services/locationService"; 
 
 export default function HalamanUtama() {
   const [teksCari, setTeksCari] = useState("");
@@ -24,8 +26,8 @@ export default function HalamanUtama() {
   const [kualitasUdara, setKualitasUdara] = useState<DataKualitasUdara | null>(null);
   const [sedangMemuat, setSedangMemuat] = useState(false);
   const [pesanError, setPesanError] = useState<string | null>(null);
+  const [pesanLokasi, setPesanLokasi] = useState<string | null>(null); 
   const teksTertunda = useDebounce(teksCari, 500);
-
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -61,9 +63,34 @@ export default function HalamanUtama() {
     }
   }
 
+  async function gunakanLokasiSaatIni() {
+    const status = await mintaIzinLokasi();
+    if (status === "denied") {
+      setPesanLokasi("Izin lokasi ditolak. Silakan cari kota secara manual di atas.");
+      return;
+    }
+    if (status === "unavailable") {
+      setPesanLokasi("Layanan lokasi tidak aktif di perangkat ini. Silakan cari kota secara manual.");
+      return;
+    }
+    setPesanLokasi(null);
+    const koordinat = await ambilKoordinatSaatIni();
+    pilihKota({
+      id: -1,
+      name: "Lokasi Saat Ini",
+      latitude: koordinat.latitude,
+      longitude: koordinat.longitude,
+      country: "",
+    });
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, padding: 16, gap: 16 }}>
       <SearchBox onCari={setTeksCari} />
+      
+      <Button title="Gunakan Lokasi Saat Ini" onPress={gunakanLokasiSaatIni} />
+      {pesanLokasi && <Text>{pesanLokasi}</Text>}
+
       {hasilPencarian.map((kota) => (
         <TouchableOpacity key={kota.id} onPress={() => pilihKota(kota)}>
           <Text>{kota.name}</Text>
@@ -83,12 +110,28 @@ export default function HalamanUtama() {
       )}
 
       {cuaca && kualitasUdara && kotaTerpilih && !sedangMemuat && (
-        <WeatherCard
-          kota={kotaTerpilih.name}
-          suhu={cuaca.saatIni.suhu}
-          tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
-          indeksAQI={kualitasUdara.indeksAQI}
-        />
+        <>
+          <WeatherCard
+            kota={kotaTerpilih.name}
+            suhu={cuaca.saatIni.suhu}
+            tingkatAQI={konversiTingkatAQI(kualitasUdara.indeksAQI)}
+            indeksAQI={kualitasUdara.indeksAQI}
+          />
+          <Button
+            title="Tambahkan ke Favorit"
+            onPress={() =>
+              router.push({
+                pathname: "/tambah-favorit",
+                params: {
+                  id: String(kotaTerpilih.id),
+                  nama: kotaTerpilih.name,
+                  lat: String(kotaTerpilih.latitude),
+                  lon: String(kotaTerpilih.longitude),
+                },
+              })
+            }
+          />
+        </>
       )}
 
       {cuaca && (
@@ -96,14 +139,12 @@ export default function HalamanUtama() {
           <Text style={{ fontSize: 12, color: "#888" }}>
             Kondisi: {labelKodeCuaca(cuaca.saatIni.kodeCuaca)} • Angin {cuaca.saatIni.kecepatanAngin} km/j
           </Text>
-          {/* Tambahan 1: Suhu Maksimal / Minimal Hari Ini */}
           <Text style={{ fontSize: 12, color: "#444" }}>
             Suhu Harian: Maks {cuaca.harian.suhuMaksimal[0]}°C / Min {cuaca.harian.suhuMinimal[0]}°C
           </Text>
         </View>
       )}
 
-      {/* Tambahan 2: Detail PM2.5 dan PM10 dekat AtribusiCuaca */}
       {kualitasUdara && (
         <Text style={{ fontSize: 11, color: "#888", textAlign: "center" }}>
           PM2.5: {kualitasUdara.pm25} µg/m³ • PM10: {kualitasUdara.pm10} µg/m³
